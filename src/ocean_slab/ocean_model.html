@@ -1,0 +1,497 @@
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=EUC-JP">
+<title>Module ocean_model_mod</title>
+<link type="text/css" href="http://www.gfdl.noaa.gov/~fms/style/doc.css" rel="stylesheet">
+<STYLE TYPE="text/css">
+          .fixed {
+            font-size:medium;
+            font-family:monospace;
+            border-style:none;
+            border-width:0.1em;
+            padding:0.1em;
+            color:#663366;
+          }
+        </STYLE>
+</head>
+<body>
+<a name="TOP"></a><font class="header" size="1"><a href="#PUBLIC INTERFACE">PUBLIC INTERFACE </a>~
+          <a href="#PUBLIC DATA">PUBLIC DATA </a>~
+          <a href="#PUBLIC ROUTINES">PUBLIC ROUTINES </a>~
+          <a href="#NAMELIST">NAMELIST </a>~
+          <a href="#DIAGNOSTIC FIELDS">DIAGNOSTIC FIELDS </a>~
+          <a href="#ERROR MESSAGES">ERROR MESSAGES </a>~
+          <a href="#REFERENCES">REFERENCES </a>~ 
+          <a href="#NOTES">NOTES</a></font>
+<hr>
+<h2>Module ocean_model_mod</h2>
+<a name="HEADER"></a>
+<!-- BEGIN HEADER -->
+<div>
+<b>Contact:&nbsp;</b><a href="mailto:Tom.Knutson@noaa.gov">   Tom Knutson </a>
+<br>
+<b>Reviewers:&nbsp;</b>
+<br>
+<b>Change History:&nbsp;</b><a href="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/ocean/mixed_layer">WebCVS Log</a>
+<br>
+<br>
+</div>
+<!-- END HEADER -->
+<a name="OVERVIEW"></a>
+<hr>
+<h4>OVERVIEW</h4>
+<!-- BEGIN OVERVIEW -->
+<p class="text">   This is a slab-type ocean model.  It is the primary means
+   of determining the equilibrium climate sensitivity 
+   of an atmosphere/land/sea-ice model. </p>
+<!-- END OVERVIEW -->
+<a name="DESCRIPTION"></a>
+<!-- BEGIN DESCRIPTION -->
+<div>   This is a slab-type ocean model, sometimes referred to as
+   as a qflux-adjusted mixed-layer model.  It is a very
+   simple ocean model consisting of a single motionless 
+   layer without advection or diffusion, but possibly 
+   including sea ice.  This type of model is the 
+   primary tool used to determine the equilibrium climate 
+   sensitivity of an atmosphere/land/sea-ice model.
+   <br>
+<br>
+   The model is designed to run in 3 stages:  restoring
+   mode, qflux-adjusted control run mode, and perturbation
+   experiment mode.  The model can also be run in 
+   "free mode" with no restoring or qflux adjustments,
+   although this is normally not done.  It can also
+   be run in various other combinations such as qflux-adjusted
+   with further restoring although this is also not 
+   normally done.
+   <br>
+<br>
+   Note that the sea-ice model is an integral part of the slab-ocean 
+   model although that code exists elsewhere (in the SIS part of 
+   FMS).  Care should be taken that the ice restoring fluxes 
+   archived by the sea-ice model during the restoring phase 
+   are added to the sst restoring fluxes archived by this
+   model during the restoring phase in order to determine 
+   the total qflux adjustment field.  Similarly any ice-lid fluxes
+   archived in the control experiment by the ice model
+   should be added to the control run qflux adjustment field
+   to obtain the final qflux adjustment field used 
+   for a perturbation experiment (without a lid).  More 
+   discussion of these topics is provided in the postscript 
+   documentation for the model (in preparation).
+   <br>
+<br> 
+<a href="http://www.gfdl.noaa.gov/~tk/Slab_Model_Documentation.htm">   Click here for additional documentation </a> 
+</div>
+<br>
+<!-- END DESCRIPTION -->
+<a name="OTHER MODULES USED"></a>
+<hr>
+<h4>OTHER MODULES USED</h4>
+<!-- BEGIN OTHER MODULES USED -->
+<div>
+<pre>    constants_mod<br> time_manager_mod<br>          mpp_mod<br>  mpp_domains_mod<br>          fms_mod<br> diag_manager_mod<br>data_override_mod<br>coupler_types_mod</pre>
+</div>
+<!-- END OTHER MODULES USED -->
+<!-- BEGIN PUBLIC INTERFACE -->
+<a name="PUBLIC INTERFACE"></a>
+<hr>
+<h4>PUBLIC INTERFACE</h4>
+<div>
+<dl>
+<dt>
+<a href="#ocean_model_init">ocean_model_init</a>:</dt>
+<dd>   This initializes the ocean model </dd>
+<dt>
+<a href="#update_ocean_model">update_ocean_model</a>:</dt>
+<dd>   The main time-stepping routine for the mixed layer ocean model </dd>
+<dt>
+<a href="#ocean_model_end">ocean_model_end</a>:</dt>
+<dd>   End of integration routine for the mixed layer ocean model </dd>
+<dt>
+<a href="#read_ice_ocean_boundary">read_ice_ocean_boundary</a>:</dt>
+<dd>   This ocean_model doesn't support concurrent runs,
+   so this routine should never be called. This is a dummy routine. </dd>
+<dt>
+<a href="#read_ice_ocean_boundary">read_ice_ocean_boundary</a>:</dt>
+<dd>   This ocean_model doesn't support concurrent runs,
+   so this routine should never be called. This is a dummy routine. </dd>
+<dt>
+<a href="#init_default_ice_ocean_boundary">init_default_ice_ocean_boundary</a>:</dt>
+<dd>   dummy routine </dd>
+</dl>
+</div>
+<br>
+<!-- END PUBLIC INTERFACE -->
+<a name="PUBLIC DATA"></a>
+<hr>
+<h4>PUBLIC DATA</h4>
+<!-- BEGIN PUBLIC DATA -->
+<div>None.<br>
+<br>
+</div>
+<!-- END PUBLIC DATA -->
+<a name="PUBLIC ROUTINES"></a>
+<hr>
+<h4>PUBLIC ROUTINES</h4>
+<!-- BEGIN PUBLIC ROUTINES -->
+<ol type="a">
+<li>
+<a name="ocean_model_init"></a>
+<h4>ocean_model_init</h4>
+<pre>  subroutine ocean_model_init (Ocean, Time_init, Time, Time_step)
+
+    type (ocean_data_type), &amp;
+         intent(inout) :: Ocean     ! Ocean definition variable
+    type (time_type), intent(in) :: &amp;
+         Time_init, &amp;               ! Initial time (currently not used by routine)
+         Time,      &amp;               ! Current time
+         Time_step                  ! Time step of ocean model</pre>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd>   The ocean model is initialized by reading namelist, 
+   reading in restart data, setting up variables and domains,
+   etc. </dd>
+<br>
+<br>
+</dl>
+</li>
+<li>
+<a name="update_ocean_model"></a>
+<h4>update_ocean_model</h4>
+<pre>  subroutine update_ocean_model( Ice_boundary, Ocean, &amp;
+       ocean_seg_start, ocean_seg_end, num_ocean_calls )
+
+    type(ice_ocean_boundary_type), intent(in) :: &amp;
+               Ice_boundary  ! Variable with fields for communication 
+                             ! from ice to the ocean
+    type (ocean_data_type), intent(inout) :: &amp;
+               Ocean         ! Ocean definition variable 
+    logical, intent(in), optional :: &amp;
+               ocean_seg_start, &amp;  ! currently unused placeholder parameter 
+               ocean_seg_end       ! currently unused placeholder parameter
+    integer ,intent(in), optional :: &amp;
+               num_ocean_calls     ! currently unused placeholder parameter</pre>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd>   The mixed layer ocean model is integrated forward for
+   one ocean time step according to the following key set of 
+   equations:
+   <br>
+<br>
+   hflx = Ice_boundary%sw_flux + Ice_boundary%lw_flux - &amp;
+   (Ice_boundary%fprec+Ice_boundary%calving)*hlf - Ice_boundary%t_flux - Ice_boundary%q_flux*hlv
+   <br>
+<br>
+   net_hflx(:,:) = hflx(:,:) + qflux_adj(:,:) + qflux_restore_sst(:,:)
+   <br>
+<br>
+   Ocean%t_surf = Ocean%t_surf + dt_ocean * net_hflx/mlcp
+   <br>
+<br> 
+</dd>
+<br>
+<br>
+</dl>
+</li>
+<li>
+<a name="ocean_model_end"></a>
+<h4>ocean_model_end</h4>
+<pre>  subroutine ocean_model_end (Ocean)
+
+    type (ocean_data_type), intent(in) :: &amp;
+                     Ocean        ! Ocean definition variable</pre>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd>   This routine writes and closes the restart file and is
+   called at the end of a model run on the system. </dd>
+<br>
+<br>
+</dl>
+</li>
+<li>
+<a name="read_ice_ocean_boundary"></a>
+<h4>read_ice_ocean_boundary</h4>
+<pre>  subroutine read_ice_ocean_boundary(file_name,iob,Ocean)
+
+    character(LEN=*),             intent(IN)    :: file_name  
+    type(ice_ocean_boundary_type),intent(INOUT) :: iob
+    type(ocean_data_type),        intent(IN)    :: Ocean</pre>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd>   This ocean_model doesn't support concurrent runs,
+   so this routine should never be called. This is a dummy routine. </dd>
+<br>
+<br>
+</dl>
+</li>
+<li>
+<a name="read_ice_ocean_boundary"></a>
+<h4>read_ice_ocean_boundary</h4>
+<pre>  subroutine write_ice_ocean_boundary(file_name,iob,Ocean)
+
+    character(LEN=*),             intent(IN) :: file_name  
+    type(ice_ocean_boundary_type),intent(IN) :: iob
+    type(ocean_data_type),        intent(IN) :: Ocean</pre>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd>   This ocean_model doesn't support concurrent runs,
+   so this routine should never be called. This is a dummy routine. </dd>
+<br>
+<br>
+</dl>
+</li>
+<li>
+<a name="init_default_ice_ocean_boundary"></a>
+<h4>init_default_ice_ocean_boundary</h4>
+<pre>! dummy routine
+
+  subroutine init_default_ice_ocean_boundary(iob)
+
+    type(ice_ocean_boundary_type),intent(INOUT) :: iob</pre>
+<dl>
+<dt>
+<b>DESCRIPTION</b>
+</dt>
+<dd>   dummy routine </dd>
+<br>
+<br>
+</dl>
+</li>
+</ol>
+<!-- END PUBLIC ROUTINES -->
+<a name="PUBLIC TYPES"></a>
+<!-- BEGIN PUBLIC TYPES -->
+<hr>
+<h4>PUBLIC TYPES</h4>
+<div>
+<table cellspacing="0" CELLPADDING="0" BORDER="0">
+<tr>
+<td>
+<pre>  type ocean_data_type
+     type(domain2D) :: Domain
+
+     real, pointer, dimension(:,:) :: &amp;
+          t_surf =&gt;NULL(), &amp;      !  mixed layer temperature
+          s_surf =&gt;NULL(), &amp;      !  mixed layer salinity (a constant at present in this model)
+          sea_lev =&gt;NULL(), &amp;     !  sea level (Not used in Mixed layer model)
+          frazil =&gt;NULL(), &amp;      !  energy flux of frazil formation.
+                                  !     unit:  when divided by dt_ocean, unit is W/m2
+          u_surf =&gt;NULL(), &amp;      !  zonal ocean current (= 0 at present in this model)
+          v_surf =&gt;NULL()         !  meridional ocean current (= 0 at present in this model)
+     logical, pointer, dimension(:,:) :: maskmap =&gt;NULL()! A pointer to an array indicating which
+                                                         ! logical processors are actually used for
+                                                         ! the ocean code. The other logical
+                                                         ! processors would be all land points and
+                                                         ! are not assigned to actual processors.
+                                                         ! This need not be assigned if all logical
+                                                         ! processors are used. This variable is dummy and need 
+                                                         ! not to be set, but it is needed to pass compilation.
+     logical, pointer, dimension(:,:) :: mask =&gt;NULL() ! mask is true for ocean points, false for land points
+     type (time_type)                 :: Time, &amp;       ! Current time for model
+                                         Time_step     ! Time step for ocean model
+     integer, pointer :: pelist(:) =&gt;NULL()
+     logical :: pe
+     integer, dimension(3)            :: axes    
+     type(coupler_2d_bc_type)         :: fields  ! array of fields used for additional tracers
+  end type ocean_data_type</pre>
+</td>
+</tr>
+<tr>
+<td>
+<pre>  type, public :: ice_ocean_boundary_type      
+     real, dimension(:,:), pointer :: u_flux =&gt;NULL(), &amp;    ! zonal wind stress (Pa)
+                                      v_flux =&gt;NULL(), &amp;    ! meridional wind stress (Pa)
+                                      t_flux =&gt;NULL(), &amp;    ! sensible heat flux (w/m2)
+                                      q_flux =&gt;NULL(), &amp;    ! specific humidity flux (kg/m2/s)
+                                      salt_flux =&gt;NULL(), &amp; ! salinity flux (kd/m2/s) (Not used in mixed layer model) 
+                                      lw_flux =&gt;NULL(), &amp;   ! net (down-up) longwave flux (W/m2)
+                                      sw_flux =&gt;NULL(), &amp;   ! net (down-up) shortwave flux (W/m2)
+                                      sw_flux_vis =&gt; NULL(),  &amp; ! visible sw radiation (w/m2)
+                                      sw_flux_dir =&gt; NULL(),  &amp; ! direct sw radiation (w/m2)
+                                      sw_flux_dif =&gt; NULL(),  &amp; ! diffuse sw radiation (w/m2)
+                                      sw_flux_vis_dir =&gt; NULL(),  &amp; ! direct visible sw radiation (w/m2)
+                                      sw_flux_vis_dif =&gt; NULL(),  &amp; ! diffuse visible sw radiation (w/m2)
+                                      lprec =&gt;NULL(), &amp;     ! mass flux of liquid precipitation (Kg/m2/s)
+                                      fprec =&gt;NULL()        ! mass flux of frozen precipitation (Kg/m2/s)
+     real, dimension(:,:), pointer :: runoff =&gt;NULL(), &amp;    ! mass flux of liquid runoff (Kg/m2/s)
+                                      calving =&gt;NULL()      ! mass flux of frozen runoff (Kg/m2/s)
+
+
+     real, dimension(:,:), pointer :: p =&gt;NULL()   ! pressure on the surface of the ocean (Pa) 
+                                                   ! (Not used in mixed layer model)
+     real, dimension(:,:,:), pointer :: data =&gt;NULL() ! collective field for "named" fields above
+     integer :: xtype             !REGRID, REDIST or DIRECT
+     type(coupler_2d_bc_type)      :: fluxes  ! array of fields used for additional tracers
+  end type ice_ocean_boundary_type</pre>
+</td>
+</tr>
+</table>
+</div>
+<br>
+<!-- END PUBLIC TYPES -->
+<a name="NAMELIST"></a>
+<!-- BEGIN NAMELIST -->
+<hr>
+<h4>NAMELIST</h4>
+<div>
+<b>&amp;ocean_model_nml</b>
+<br>
+<br>
+<div>
+<dl>
+<dt>
+<tt>mixed_layer_depth</tt>
+</dt>
+<dl>   Depth of the mixed layer <br>
+<span class="type">[real, units: meters, default: 50.0]</span>
+</dl>
+<dt>
+<tt>mixed_layer_salin</tt>
+</dt>
+<dl>   Salinitiy of the mixed layer <br>
+<span class="type">[real, units: parts per thousand, default: 33.333]</span>
+</dl>
+<dt>
+<tt>layout</tt>
+</dt>
+<dl>   Multiple processor layout variable <br>
+<span class="type">[integer, units:  , default: (/0,0/)]</span>
+</dl>
+<dt>
+<tt>do_qflux_adj</tt>
+</dt>
+<dl>   Add qflux adjustment to mixed layer tendency equation? <br>
+<span class="type">[logical, units:  , default: .false.]</span>
+</dl>
+<dt>
+<tt>do_restore_sst</tt>
+</dt>
+<dl>   Restore mixed layer temperature toward observed SST? <br>
+<span class="type">[logical, units:  , default: .false.]</span>
+</dl>
+<dt>
+<tt>sst_restore_timescale</tt>
+</dt>
+<dl>   Time scale for mixed layer temperature restoring (if used) <br>
+<span class="type">[real, units: days, default: 5.0.]</span>
+</dl>
+</dl>
+</div>
+</div>
+<br>
+<!-- END NAMELIST -->
+<a name="DIAGNOSTIC FIELDS"></a>
+<!-- BEGIN DIAGNOSTIC FIELDS -->
+<!-- END DIAGNOSTIC FIELDS --><a name="DATA SETS"></a>
+<!-- BEGIN DATA SETS -->
+<hr>
+<h4>DATA SETS</h4>
+<div>None.<br>
+<br>
+</div>
+<!-- END DATA SETS -->
+<a name="PUBLIC CODE"></a>
+<!-- BEGIN PUBLIC CODE -->
+<hr>
+<h4>PUBLIC CODE</h4>
+<div>
+<table cellspacing="0" CELLPADDING="5" BORDER="0">
+<tr>
+<td>From subroutine update_ocean_model:<br>
+<pre>! The following are some key equations for this model:
+     
+     hflx = Ice_boundary%sw_flux + Ice_boundary%lw_flux - &amp;
+             (Ice_boundary%fprec+Ice_boundary%calving)*hlf - Ice_boundary%t_flux - Ice_boundary%q_flux*hlv
+
+     net_hflx(:,:) = hflx(:,:) + qflux_adj(:,:) + qflux_restore_sst(:,:)
+
+     Ocean%t_surf = Ocean%t_surf + dt_ocean*net_hflx/mlcp</pre>
+</td>
+</tr>
+</table>
+<br>
+</div>
+<!-- END PUBLIC CODE -->
+<a name="ERROR MESSAGES"></a>
+<!-- BEGIN ERROR MESSAGES -->
+<hr>
+<h4>ERROR MESSAGES</h4>
+<div>
+<dl>
+<dt>
+<b>FATAL in ocean_model_init</b>
+</dt>
+<dd>
+<span class="errmsg">cannot open INPUT/grid_spec.nc</span>
+</dd>
+<dd>   Grid specification file could not be opened. </dd>
+<dt>
+<b>FATAL in ocean_model_init</b>
+</dt>
+<dd>
+<span class="errmsg">cannot find wet on INPUT/grid_spec.nc</span>
+</dd>
+<dd>   The wet field could not be located on the grid specification file. </dd>
+<dt>
+<b>FATAL in ocean_model_init</b>
+</dt>
+<dd>
+<span class="errmsg">cannot find geo_lonc on INPUT/grid_spec.nc</span>
+</dd>
+<dd>   The geo_lonc field could not be located on the grid specification file. </dd>
+<dt>
+<b>FATAL in ocean_model_init</b>
+</dt>
+<dd>
+<span class="errmsg">cannot find geo_latc on INPUT/grid_spec.nc</span>
+</dd>
+<dd>   The geo_latc field could not be located on the grid specification file. </dd>
+<dt>
+<b>FATAL in update_ocean_model</b>
+</dt>
+<dd>
+<span class="errmsg">Slab ocean_model not correctly initialized.</span>
+</dd>
+<dd>   The slab or mixed-layer type ocean model was not correctly initialized. </dd>
+<dt>
+<b>FATAL in update_ocean_model</b>
+</dt>
+<dd>
+<span class="errmsg">Ice_ocean_boundary not correctly initialized.</span>
+</dd>
+<dd>   The Ice_ocean_boundary variable was not correctly initialized. </dd>
+<dt>
+<b>FATAL in read_ice_ocean_boundary</b>
+</dt>
+<dd>
+<span class="errmsg">ocean_mixed_layer model cannot run concurrently.</span>
+</dd>
+<dd>   The ocean_mixed_layer model is not coded to run concurrently at present. </dd>
+<dt>
+<b>FATAL in read_ice_ocean_boundary</b>
+</dt>
+<dd>
+<span class="errmsg">ocean_mixed_layer model cannot run concurrently.</span>
+</dd>
+<dd>   The ocean_mixed_layer model is not coded to run concurrently at present. </dd>
+</dl>
+<br>
+</div>
+<!-- END ERROR MESSAGES -->
+<hr>
+<div align="right">
+<font size="-1"><a href="#TOP">top</a></font>
+</div>
+</body>
+</html>

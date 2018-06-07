@@ -1,0 +1,71 @@
+<!--
+This file indicates the URL, repositories and git tag used to get the inital
+source code for the public release.
+-->
+<perldata>
+ <hashref memory_address="0x3330740">
+  <item key="atmos_dyn">
+   <hashref memory_address="0x3502988">
+    <item key="codeBase">atmos_drivers.git atmos_fv_dynamics.git</item>
+    <item key="codeTag">warsaw_201803</item>
+    <item key="sourceCsh"></item>
+    <item key="vcBrand">git</item>
+    <item key="vcRoot">https://gitlab.gfdl.noaa.gov/fms</item>
+   </hashref>
+  </item>
+  <item key="atmos_phys">
+   <hashref memory_address="0x3502448">
+    <item key="codeBase">atmos_param_am3.git atmos_shared_am3.git</item>
+    <item key="codeTag">warsaw_201803</item>
+    <item key="sourceCsh"></item>
+    <item key="vcBrand">git</item>
+    <item key="vcRoot">https://gitlab.gfdl.noaa.gov/fms</item>
+   </hashref>
+  </item>
+  <item key="coupler">
+   <hashref memory_address="0x3502640">
+    <item key="codeBase">coupler.git</item>
+    <item key="codeTag">warsaw_201803</item>
+    <item key="sourceCsh"></item>
+    <item key="vcBrand">git</item>
+    <item key="vcRoot">https://gitlab.gfdl.noaa.gov/fms</item>
+   </hashref>
+  </item>
+  <item key="fms">
+   <hashref memory_address="0x2d3f100">
+    <item key="codeBase">shared.git</item>
+    <item key="codeTag">warsaw_201803</item>
+    <item key="sourceCsh"></item>
+    <item key="vcBrand">git</item>
+    <item key="vcRoot">https://gitlab.gfdl.noaa.gov/fms</item>
+   </hashref>
+  </item>
+  <item key="ice">
+   <hashref memory_address="0x3502910">
+    <item key="codeBase">ice_sis.git ice_param.git</item>
+    <item key="codeTag">warsaw_201803</item>
+    <item key="sourceCsh"></item>
+    <item key="vcBrand">git</item>
+    <item key="vcRoot">https://gitlab.gfdl.noaa.gov/fms</item>
+   </hashref>
+  </item>
+  <item key="land">
+   <hashref memory_address="0x35027d8">
+    <item key="codeBase">land_lad2.git</item>
+    <item key="codeTag">warsaw_201803</item>
+    <item key="sourceCsh"></item>
+    <item key="vcBrand">git</item>
+    <item key="vcRoot">https://gitlab.gfdl.noaa.gov/fms</item>
+   </hashref>
+  </item>
+  <item key="ocean">
+   <hashref memory_address="0x3501f80">
+    <item key="codeBase">ocean_slab.git</item>
+    <item key="codeTag">warsaw_201803</item>
+    <item key="sourceCsh"></item>
+    <item key="vcBrand">git</item>
+    <item key="vcRoot">https://gitlab.gfdl.noaa.gov/fms</item>
+   </hashref>
+  </item>
+ </hashref>
+</perldata>
