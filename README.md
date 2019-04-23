@@ -53,13 +53,13 @@ match your system, and then run `make`.
 ## Obtaining the Input data
 
 The input data required for running the FMS Slab Ocean model can be
-obtained on the GFDL FTP site directory: ftp://ftp.gfdl.noaa.gov/pub/sdu/slab_ocean_data
+obtained on the GFDL FTP site directory: ftp://ftp.gfdl.noaa.gov/perm/GFDL_pubrelease/SM2
 
 The file
-[SM2_Control_inputData.tar.gz](ftp://ftp.gfdl.noaa.gov/pub/sdu/slab_ocean_data/SM2_Control_inputData.tar.gz)
+[SM2_Control_inputData.tar.gz](ftp://ftp.gfdl.noaa.gov/pub/perm/GFDL_pubrelease/SM2_Control_inputData.tar.gz)
 contains the input data, and the runtime configuration required to run
 the SM2 Control experiment.  The file
-[SM2_Control_initCond_07610101.tar.gz](ftp://ftp.gfdl.noaa.gov/pub/sdu/slab_ocean_data/SM2_Control_initCond_07610101.tar.gz)
+[SM2_Control_initCond_07610101.tar.gz](ftp://ftp.gfdl.noaa.gov/pub/perm/GFDL_pubrelease/SM2_Control_initCond_07610101.tar.gz)
 contains the initial condition (restart) data to start the SM2 Control
 experiment on January 01, 0761.
 
